@@ -9,6 +9,7 @@ RESTful API using Golang with the Gin framework and GORM for database operations
 3. [API Documentation](#api-documentation)
 4. [Setup and Run the Application](#setup-and-run-the-application)
 5. [API Endpoints](#api-endpoints)
+6. [Unit Tests](#unit-tests)
 
 ## Database Setup
 
