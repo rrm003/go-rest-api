@@ -32,6 +32,7 @@ Download and install the migrate tool:
 
 ```sh
 curl -L https://github.com/golang-migrate/migrate/releases/download/v4.15.1/migrate.linux-amd64.tar.gz | tar xvz
+
 sudo mv migrate /usr/local/bin/migrate
 ```
 
@@ -40,7 +41,23 @@ sudo mv migrate /usr/local/bin/migrate
 Use the following command to connect to the PostgreSQL database:
 
 ```sh
+docker exec -it go-rest-api-db bash
+
 psql postgresql://gigawrks:dev2s@localhost:5432/user-dbs
+```
+
+### Run migration scripts
+
+create all the relations
+
+```sh
+./migrations/run-up.sh
+```
+
+rollback changes
+
+```sh
+./migrations/run-down.sh
 ```
 
 ## API Documentation
@@ -102,3 +119,13 @@ go run main.go
 ```
 
 Ensure the database is up and running before starting the application, follow steps [here](#database-setup).
+
+## Unit Tests
+
+### Generating mocks
+
+```sh
+mockgen -source=services/user_service.go -destination=services/mocks/user_service_mock.go -package=services
+
+mockgen -source=database/database.go -destination=database/mocks/database_mock.go -package=database
+```
