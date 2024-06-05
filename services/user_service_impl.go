@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"go-rest-api/database"
 	"go-rest-api/models"
 	"time"
@@ -77,10 +78,22 @@ func (s *userService) GetUser(id string) (models.User, error) {
 }
 
 func (s *userService) UpdateUser(id string, user models.User) error {
-	if err := s.db.First(&user, id).Error; err != nil {
+	existing := models.User{}
+	if err := s.db.First(&existing, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("user with ID %s not found", id)
+		}
 		return err
 	}
-	return s.db.Save(&user).Error
+
+	existing.Country = user.Country
+	existing.Password = user.Password
+
+	if err := s.db.Save(&existing).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *userService) DeleteUser(id string) error {
