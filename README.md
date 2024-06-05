@@ -130,3 +130,9 @@ mockgen -source=services/user_service.go -destination=services/mocks/user_servic
 
 mockgen -source=database/database.go -destination=database/mocks/database_mock.go -package=database
 ```
+
+run tests
+
+```sh
+go test ./...
+```
