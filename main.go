@@ -35,8 +35,12 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	database.InitDatabase()
-	r := routes.SetupRouter()
+	dbInstance, err := database.InitDatabase()
+	if err != nil {
+		return
+	}
+
+	r := routes.SetupRouter(dbInstance)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(files.Handler))
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Failed to run server: ", err)

@@ -9,9 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"go-rest-api/database"
-	"go-rest-api/models"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -73,14 +70,11 @@ func FetchCountries(c *gin.Context) {
 // @Success 200 {array} models.Country
 // @Failure 500 {object} gin.H
 // @Router /countries [get]
-func GetCountries(c *gin.Context) {
-	var countries []string
-	err := database.DB.Model(&models.User{}).Distinct("country").Pluck("country", &countries).Error
+func (ctrl *UserController) GetCountries(c *gin.Context) {
+	countries, err := ctrl.service.GetCountires()
 	if err != nil {
-		log.Printf("Error reading db: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read db countires"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"data": countries})
 }
