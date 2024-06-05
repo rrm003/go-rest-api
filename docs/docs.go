@@ -26,6 +26,11 @@ const docTemplate = `{
     "paths": {
         "/countries": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get a list of all countries stored in the database",
                 "produces": [
                     "application/json"
@@ -34,6 +39,15 @@ const docTemplate = `{
                     "country"
                 ],
                 "summary": "Get all countries",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -53,8 +67,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/countries/fetch": {
+        "/fetch-countries": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Fetch countries from an external API and store them in the database",
                 "produces": [
                     "application/json"
@@ -63,6 +82,15 @@ const docTemplate = `{
                     "country"
                 ],
                 "summary": "Fetch countries from external API",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

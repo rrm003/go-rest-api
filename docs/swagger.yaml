@@ -59,6 +59,12 @@ paths:
   /countries:
     get:
       description: Get a list of all countries stored in the database
+      parameters:
+      - description: Authorization token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -72,12 +78,20 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Get all countries
       tags:
       - country
-  /countries/fetch:
+  /fetch-countries:
     get:
       description: Fetch countries from an external API and store them in the database
+      parameters:
+      - description: Authorization token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -91,6 +105,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
       summary: Fetch countries from external API
       tags:
       - country
