@@ -18,6 +18,8 @@ type Database interface {
 	Find(out interface{}, where ...interface{}) *gorm.DB
 	Save(value interface{}) *gorm.DB
 	Delete(value interface{}, where ...interface{}) *gorm.DB
+	Distinct(args ...interface{}) *gorm.DB
+	Pluck(column string, dest interface{}) *gorm.DB
 }
 
 type GormDatabase struct {
@@ -46,6 +48,14 @@ func (g *GormDatabase) Save(value interface{}) *gorm.DB {
 
 func (g *GormDatabase) Delete(value interface{}, where ...interface{}) *gorm.DB {
 	return g.DB.Delete(value, where...)
+}
+
+func (g *GormDatabase) Distinct(value ...interface{}) *gorm.DB {
+	return g.DB.Distinct(value)
+}
+
+func (g *GormDatabase) Pluck(col string, dest interface{}) *gorm.DB {
+	return g.DB.Pluck(col, dest)
 }
 
 func InitDatabase() (*GormDatabase, error) {

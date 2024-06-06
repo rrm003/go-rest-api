@@ -67,6 +67,24 @@ func (mr *MockDatabaseMockRecorder) Delete(value interface{}, where ...interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDatabase)(nil).Delete), varargs...)
 }
 
+// Distinct mocks base method.
+func (m *MockDatabase) Distinct(args ...interface{}) *gorm.DB {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Distinct", varargs...)
+	ret0, _ := ret[0].(*gorm.DB)
+	return ret0
+}
+
+// Distinct indicates an expected call of Distinct.
+func (mr *MockDatabaseMockRecorder) Distinct(args ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Distinct", reflect.TypeOf((*MockDatabase)(nil).Distinct), args...)
+}
+
 // Find mocks base method.
 func (m *MockDatabase) Find(out interface{}, where ...interface{}) *gorm.DB {
 	m.ctrl.T.Helper()
@@ -103,6 +121,20 @@ func (mr *MockDatabaseMockRecorder) First(out interface{}, where ...interface{})
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{out}, where...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "First", reflect.TypeOf((*MockDatabase)(nil).First), varargs...)
+}
+
+// Pluck mocks base method.
+func (m *MockDatabase) Pluck(column string, dest interface{}) *gorm.DB {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Pluck", column, dest)
+	ret0, _ := ret[0].(*gorm.DB)
+	return ret0
+}
+
+// Pluck indicates an expected call of Pluck.
+func (mr *MockDatabaseMockRecorder) Pluck(column, dest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Pluck", reflect.TypeOf((*MockDatabase)(nil).Pluck), column, dest)
 }
 
 // Save mocks base method.
