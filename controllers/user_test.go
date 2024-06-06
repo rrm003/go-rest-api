@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func setupTest() (*gin.Engine, *svcMock.MockUserService, *gomock.Controller) {
@@ -50,6 +51,19 @@ func TestSignUp(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "testuser")
+}
+
+func TestSignUp_BadRequest(t *testing.T) {
+	router, _, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/signup", strings.NewReader(`{"username":"testuser","password":"password", "country":"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "unexpected EOF")
 }
 
 func TestSignUp_Fail_NoPassword(t *testing.T) {
@@ -132,6 +146,37 @@ func TestLogin(t *testing.T) {
 	assert.Contains(t, w.Body.String(), token)
 }
 
+func TestLoginInvalidRequest(t *testing.T) {
+	router, _, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/login", strings.NewReader(`{"username": "testuser", "password": `))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid request")
+}
+
+func TestLoginErr(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	username := "testuser"
+	password := "invalid"
+
+	mockUserService.EXPECT().Login(username, password).Return("", errors.New("invalid credential"))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/login", strings.NewReader(`{"username":"testuser","password":"invalid"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid credential")
+}
+
 func TestGetUsers(t *testing.T) {
 	router, mockUserService, ctrl := setupTest()
 	defer ctrl.Finish()
@@ -152,6 +197,22 @@ func TestGetUsers(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "user2")
 }
 
+func TestGetUsers_DBErr(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	users := []models.User{}
+
+	mockUserService.EXPECT().GetUsers().Return(users, errors.New("failed to query"))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "failed to query")
+}
+
 func TestGetUser(t *testing.T) {
 	router, mockUserService, ctrl := setupTest()
 	defer ctrl.Finish()
@@ -166,6 +227,20 @@ func TestGetUser(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "testuser")
+}
+
+func TestGetUserNotFound(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	mockUserService.EXPECT().GetUser("1").Return(models.User{}, gorm.ErrRecordNotFound)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/users/1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Contains(t, w.Body.String(), "User not found")
 }
 
 func TestUpdateUser(t *testing.T) {
@@ -185,6 +260,53 @@ func TestUpdateUser(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "updateduser")
 }
 
+func TestUpdateUserInvalidRequest(t *testing.T) {
+	router, _, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"username":"updateduser","password":`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "unexpected EOF")
+}
+
+func TestUpdateUserNoRecordFound(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	user := models.User{Username: "updateduser", Password: "newpassword"}
+
+	mockUserService.EXPECT().UpdateUser("1", user).Return(gorm.ErrRecordNotFound)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"username":"updateduser","password":"newpassword"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Contains(t, w.Body.String(), "User not found")
+}
+
+func TestUpdateUser_Fail_DBErr(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	user := models.User{Username: "updateduser", Password: "newpassword"}
+
+	mockUserService.EXPECT().UpdateUser("1", user).Return(errors.New("failed to update"))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/users/1", strings.NewReader(`{"username":"updateduser","password":"newpassword"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "failed to update")
+}
+
 func TestDeleteUser(t *testing.T) {
 	router, mockUserService, ctrl := setupTest()
 	defer ctrl.Finish()
@@ -197,4 +319,18 @@ func TestDeleteUser(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "User deleted")
+}
+
+func TestDeleteUser_Fail_DBErr(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	mockUserService.EXPECT().DeleteUser("1").Return(errors.New("failed to delete"))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/users/1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "failed to delete")
 }
