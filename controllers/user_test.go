@@ -2,6 +2,7 @@
 package controllers
 
 import (
+	"errors"
 	"go-rest-api/models"
 	svcMock "go-rest-api/services/mocks"
 	"net/http"
@@ -37,17 +38,79 @@ func TestSignUp(t *testing.T) {
 	user := models.User{
 		Username: "testuser",
 		Password: "password",
+		Country:  "usa",
 	}
 
 	mockUserService.EXPECT().SignUp(user).Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/signup", strings.NewReader(`{"username":"testuser","password":"password"}`))
+	req, _ := http.NewRequest("POST", "/signup", strings.NewReader(`{"username":"testuser","password":"password", "country":"usa"}`))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "testuser")
+}
+
+func TestSignUp_Fail_NoPassword(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	user := models.User{
+		Username: "testuser",
+		Country:  "usa",
+	}
+
+	mockUserService.EXPECT().SignUp(user).Return(nil).Times(0)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/signup", strings.NewReader(`{"username":"testuser","country":"usa"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "required fields [country, password]")
+}
+
+func TestSignUp_Fail_NoCountry(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	user := models.User{
+		Username: "testuser",
+		Password: "asopa#010",
+	}
+
+	mockUserService.EXPECT().SignUp(user).Return(nil).Times(0)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/signup", strings.NewReader(`{"username":"testuser","password":"asopa#010"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "required fields [country, password]")
+}
+
+func TestSignUp_Fail_DBErr(t *testing.T) {
+	router, mockUserService, ctrl := setupTest()
+	defer ctrl.Finish()
+
+	user := models.User{
+		Username: "testuser",
+		Password: "password",
+		Country:  "usa",
+	}
+
+	mockUserService.EXPECT().SignUp(user).Return(errors.New("failed to fetch record"))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/signup", strings.NewReader(`{"username":"testuser","password":"password", "country":"usa"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "failed to fetch record")
 }
 
 func TestLogin(t *testing.T) {
