@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-rest-api/database"
 	"go-rest-api/models"
+	"go-rest-api/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -27,6 +28,12 @@ func NewUserService(db database.Database) UserService {
 }
 
 func (s *userService) SignUp(user models.User) error {
+	var err error
+	user.Password, err = utils.HashPassword(user.Password)
+	if err != nil {
+		return errors.New("failed to encrypt")
+	}
+
 	return s.db.Create(&user).Error
 }
 
@@ -36,11 +43,11 @@ func (s *userService) Login(username, password string) (string, error) {
 		if err == gorm.ErrRecordNotFound {
 			return "", errors.New("invalid credentials: username")
 		}
+
 		return "", err
 	}
 
-	// Validate password (simplified for this example, use proper hashing in production)
-	if user.Password != password {
+	if utils.CheckPasswordHash(user.Password, password) {
 		return "", errors.New("invalid credentials: password")
 	}
 
@@ -52,6 +59,7 @@ func (s *userService) Login(username, password string) (string, error) {
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
@@ -66,6 +74,7 @@ func (s *userService) GetUsers() ([]models.User, error) {
 	if err := s.db.Find(&users).Error; err != nil {
 		return nil, err
 	}
+
 	return users, nil
 }
 
@@ -74,6 +83,7 @@ func (s *userService) GetUser(id string) (models.User, error) {
 	if err := s.db.First(&user, id).Error; err != nil {
 		return user, err
 	}
+
 	return user, nil
 }
 
@@ -83,6 +93,7 @@ func (s *userService) UpdateUser(id string, user models.User) error {
 		if err == gorm.ErrRecordNotFound {
 			return fmt.Errorf("user with ID %s not found", id)
 		}
+
 		return err
 	}
 
