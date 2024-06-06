@@ -48,6 +48,11 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
+	if user.Country == "" || user.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "required fields [country, password]"})
+		return
+	}
+
 	if err := ctrl.service.SignUp(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
